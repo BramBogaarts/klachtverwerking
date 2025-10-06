@@ -1,0 +1,13 @@
+#VENDOR
+/vendor/
+
+#.env
+.env
+*.env
+
+# log
+Log
+Log/*
+*.log
+
+

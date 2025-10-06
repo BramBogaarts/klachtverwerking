@@ -1,8 +1,18 @@
 <?php
-require 'vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
+
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+use Monolog\Level;
+use Monolog\Logger; 
+use Monolog\Handler\StreamHandler;
+use Dotenv\Dotenv;
+
+$dotenv = Dotenv::createImmutable( '../');
+$dotenv->load();
+var_dump($_ENV['MIJN_EMAIL']);
+var_dump($_ENV['PASSWORD']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $naam   = trim($_POST['naam'] ?? '');
@@ -21,15 +31,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com';
             $mail->SMTPAuth   = true;
-            $mail->Username   = 'bamieboknol@gmail.com';    // <<< vul hier je Gmail-adres in
-            $mail->Password   = 'liuz cgpz bofe qvpd';    // <<< vul hier je Gmail App-wachtwoord in
+            $mail->Username = $_ENV['MIJN_EMAIL'];    // <<< vul hier je Gmail-adres in
+            $mail->Password = $_ENV['PASSWORD'];    // <<< vul hier je Gmail App-wachtwoord in
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587;
-
+ 
             // Afzender & ontvangers
-            $mail->setFrom('jouwgmail@gmail.com', 'Klantenservice'); 
+            $mail->setFrom($_ENV['MIJN_EMAIL'], 'Klantenservice'); 
             $mail->addAddress($email, $naam);               // naar gebruiker
-            $mail->addCC('bamieboknol@email.com');         // cc naar jezelf
+            $mail->addCC($_ENV['MIJN_EMAIL']);         // cc naar jezelf
+           
 
             // Mail inhoud
             $mail->isHTML(true);
@@ -49,6 +60,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $mail->AltBody = "Naam: $naam\nE-mail: $email\nKlacht: $klacht";
 
             $mail->send();
+
+            $log = new Logger('mailer');
+            $logFile = '../Log/info.log';
+            $log->pushHandler(new StreamHandler($logFile, Level::Info));
+            $log->info('E-mail is verzonden naar:'. $email . $klacht);
+            $log->debug('debug');
+
+            $log->warning('dit is een waarschuwingsbericht');
+            $log->error('dit is een error');
             echo "<p style='color:green;'>✅ Uw klacht is verstuurd en u ontvangt een bevestiging per e-mail.</p>";
         } catch (Exception $e) {
             echo "<p style='color:red;'>❌ Fout bij verzenden: " . htmlspecialchars($mail->ErrorInfo) . "</p>";
